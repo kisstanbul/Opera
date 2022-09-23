@@ -1,7 +1,7 @@
 --
 -- PV_ANEMON_LOYALTY  (View)
 --
-CREATE OR REPLACE VIEW PV_ANEMON_LOYALTY AS
+CREATE OR REPLACE VIEW pv_anemon_loyalty AS
     SELECT resort
          , name_id
          , confirmation_no
@@ -41,10 +41,10 @@ CREATE OR REPLACE VIEW PV_ANEMON_LOYALTY AS
                , checkout
                , nights
                , adults
-               , SUM ( CASE WHEN IS_ANEMON_PUAN = 'Y' THEN 0 ELSE room_revenue END) room_revenue
-               , SUM ( CASE WHEN IS_ANEMON_PUAN = 'Y' THEN room_revenue ELSE 0 END) anemon_puan
+               , SUM ( room_revenue) + SUM ( CASE WHEN is_anemon_puan = 'Y' THEN total_revenue ELSE 0 END) room_revenue
+               , SUM ( CASE WHEN is_anemon_puan = 'Y' THEN total_revenue ELSE 0 END) * -1 anemon_puan
                , SUM ( pck_revenue) pck_revenue
-               , SUM ( total_revenue) - SUM ( room_revenue) - SUM ( pck_revenue) extra_revenue
+               , SUM ( CASE WHEN is_anemon_puan = 'Y' THEN 0 ELSE total_revenue END) - SUM ( room_revenue) - SUM ( pck_revenue) extra_revenue
                , SUM ( total_revenue) total_revenue
                , bill_no
           --         , RTRIM ( XMLAGG ( XMLELEMENT ( e, bill_no || ',')).EXTRACT ( '//text()'), ',') bill_no
@@ -134,7 +134,7 @@ CREATE OR REPLACE VIEW PV_ANEMON_LOYALTY AS
                          END
                            total_revenue
                      , ft.bill_no
-                     , CASE WHEN ft.trx_code = '1035' THEN 'Y' ELSE 'N' END IS_ANEMON_PUAN
+                     , CASE WHEN ft.trx_code = '1035' THEN 'Y' ELSE 'N' END is_anemon_puan
                 FROM (financial_transactions ft INNER JOIN reservation_name rn ON ft.resort = rn.resort AND ft.original_resv_name_id = rn.resv_name_id)
                      INNER JOIN name n ON rn.name_id = n.name_id
                      INNER JOIN trx$_codes tc ON tc.resort = ft.resort AND tc.trx_code = ft.trx_code
