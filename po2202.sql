@@ -1,32 +1,18 @@
---BEGIN PMS_P.INITIALIZE('NA_REPORTS','NA_REPORTS','EXPRESS'); END;
+-- BEGIN PMS_P.INITIALIZE('NA_REPORTS','NA_REPORTS','BJVRC'); END;
 -- select pms_p.business_date from dual;
 -- SELECT * FROM resort
 WITH giykimbil AS
          (SELECT rn.resv_name_id
-               , n.name_id
                , e.room
                , e.reservation_date
                , e.resort
-               , rn.trunc_begin_date
-               , rn.trunc_end_date
-               , CASE e.room_category WHEN '-1' THEN 0 ELSE (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END) * dn.adults END adults
-               , CASE e.room_category WHEN '-1' THEN 0 ELSE (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END) * dn.children END children
-               , CASE e.room_category
-                     WHEN '-1' THEN
-                         0
-                     ELSE
-                           (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END)
-                         * is_primary_yn (
-                                          rn.resort
-                                        , rn.resv_name_id
-                                        , e.reservation_date
-                                        , dn.share_amount
-                                        , rn.resv_status
-                                        , dn.insert_date
-                                         )
-                         * e.physical_quantity
-                 END
-                     no_of_rooms
+               -- , n.name_id
+               , NVL (n.LAST, n.company) || ',' || NVL (n.FIRST, '') full_name
+               --, rn.trunc_begin_date
+               -- , rn.trunc_end_date
+               -- , CASE e.room_category WHEN '-1' THEN 0 ELSE (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END) * dn.adults END adults
+               -- , CASE e.room_category WHEN '-1' THEN 0 ELSE (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END) * dn.children END children
+               --, CASE e.room_category  WHEN '-1' THEN 0 ELSE (CASE WHEN rn.trunc_end_date <> e.reservation_date OR rn.trunc_end_date = rn.trunc_begin_date THEN 1 ELSE 0 END)* is_primary_yn (rn.resort, rn.resv_name_id, e.reservation_date, dn.share_amount, rn.resv_status, dn.insert_date)* e.physical_quantity END no_of_rooms
                , NVL (
                       (SELECT 'Y'
                        FROM reservation_daily_element_name a, reservation_daily_element_name b, reservation_name c
@@ -41,6 +27,7 @@ WITH giykimbil AS
                          AND c.resv_status IN ('RESERVED'
                                              , 'PROSPECT'
                                              , 'CHECKED IN'
+                                             , 'CHECKED OUT' -- ?
                                              , 'WAITLIST')
                          AND ROWNUM < 2)
                     , 'N'
@@ -53,18 +40,11 @@ WITH giykimbil AS
                     , 'N'
                      )
                      accompanying_yn
-               , rn.confirmation_no
-               , NVL (n.LAST, n.company) || ',' || NVL (n.FIRST, '') full_name
-               , e.origin_of_booking
-               , e.market_code
-               , (SELECT n1.sname
-                  FROM name n1
-                  WHERE n1.name_id = dn.company_id)
-                     company_name
-               , (SELECT n1.sname
-                  FROM name n1
-                  WHERE n1.name_id = dn.travel_agent_id)
-                     travel_agent_name
+               -- , rn.confirmation_no
+               -- , e.origin_of_booking
+               -- , e.market_code
+               --, (SELECT n1.sname FROM name n1 WHERE n1.name_id = dn.company_id) company_name
+               --, (SELECT n1.sname FROM name n1 WHERE n1.name_id = dn.travel_agent_id) travel_agent_name
           FROM reservation_name rn
              , name n
              , reservation_daily_elements e
@@ -100,27 +80,29 @@ WITH giykimbil AS
                , SUM ( net_pck_revenue) net_pck_revenue
           FROM detail
           GROUP BY org_resv_id, trx_date)
-SELECT qry.trx_date group_by_date
-     , CASE WHEN gkb.shared_yn = 'Y' THEN '*' END || gkb.full_name
-     , gkb.room resroom
+SELECT gkb.resort
+     , gkb.reservation_date
+     , gkb.full_name 
+     , gkb.room 
+     , gkb.shared_yn
      , qry.room_revenue
      , qry.net_room_revenue
      , qry.pck_revenue
+     , qry.net_pck_revenue     
      , (qry.room_revenue + qry.pck_revenue) total_revenue
+     , (qry.net_room_revenue + qry.net_pck_revenue) net_total_revenue
      , (SELECT RTRIM ( XMLAGG ( XMLELEMENT ( e, NVL (n2.LAST, n2.company) || ',' || NVL (n2.FIRST, '') || ',')).EXTRACT ( '//text()'), ',')
         FROM reservation_name rn2 INNER JOIN name n2 ON rn2.name_id = n2.name_id
         WHERE rn2.resort = gkb.resort AND rn2.parent_resv_name_id = gkb.resv_name_id AND rn2.name_usage_type = 'AG')
            accompanying_names
      , gkb.accompanying_yn
-     , qry.net_pck_revenue
-     , (qry.net_room_revenue + qry.net_pck_revenue) net_total_revenue
-     , gkb.no_of_rooms
-     , gkb.adults
-     , gkb.children
-     , (gkb.adults + gkb.children) persons
-     , gkb.resort
-     , gkb.origin_of_booking
-     , gkb.market_code
-     , gkb.company_name
-     , gkb.travel_agent_name
-FROM giykimbil gkb INNER JOIN qry ON gkb.resv_name_id = qry.org_resv_id AND gkb.reservation_date = qry.trx_date
+-- , gkb.no_of_rooms
+-- , gkb.adults
+-- , gkb.children
+-- , (gkb.adults + gkb.children) persons
+-- , gkb.origin_of_booking
+-- , gkb.market_code
+-- , gkb.company_name
+-- , gkb.travel_agent_name
+FROM giykimbil gkb 
+LEFT OUTER JOIN qry ON gkb.resv_name_id = qry.org_resv_id AND gkb.reservation_date = qry.trx_date
