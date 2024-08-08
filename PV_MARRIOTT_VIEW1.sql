@@ -1,5 +1,5 @@
-CREATE VIEW PV_MARRIOTT_VIEW1 AS
-    SELECT resv_name_id RezNo
+CREATE OR REPLACE VIEW PV_MARRIOTT_VIEW1 AS
+    SELECT confirmation_no RezNo
          , Type_ "Type"
          , resort HotelNo
          , resort_name Hotel
@@ -16,6 +16,8 @@ CREATE VIEW PV_MARRIOTT_VIEW1 AS
          , FreeChild CocukUcretsiz
          , Baby Bebek
          , ROUND ( room_revenue * eur_exchange_rate, 2) OdaGeliriEUR
+         , room_revenue OdaGeliri
+         , room_revenue_tax OdaGeliriVergi
     FROM pv_marriott_resv_dtl dtl
     WHERE dtl.reservation_date = (SELECT business_date
                                   FROM businessdate b
