@@ -1,6 +1,6 @@
-CREATE VIEW PV_MARRIOTT_VIEW2 AS
+CREATE OR REPLACE VIEW PV_MARRIOTT_VIEW2 AS
     SELECT resort HotelNo
-         , resv_name_id RezNo
+         , confirmation_no RezNo
          , arrival_date TarihGiris
          , departure_date TarihCikis
          , last_name Soyad
