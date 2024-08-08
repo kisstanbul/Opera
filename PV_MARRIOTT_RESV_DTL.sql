@@ -2,12 +2,13 @@
 -- PV_MARRIOTT_RESV_DTL  (View)
 --
 CREATE OR REPLACE VIEW PV_MARRIOTT_RESV_DTL AS
-SELECT rn.resort
+SELECT rn.resort    
      , (SELECT r.name
         FROM resort r
         WHERE r.resort = rn.resort)
            resort_name
      , rn.resv_name_id
+     , rn.confirmation_no
      , (CASE WHEN SUBSTR ( e.room_category, 1, 1) <> '-' THEN CASE WHEN rn.trunc_begin_date = rn.trunc_end_date OR dn.reservation_date < rn.trunc_end_date THEN 1 ELSE 0 END ELSE 0 END) resv_multiplier
      , dn.reservation_date
      , rn.insert_date --  Salesdate
@@ -103,7 +104,7 @@ SELECT rn.resort
                                                   FROM businessdate
                                                   WHERE state = 'OPEN' AND resort = rn.resort)
                                                 )
-                                        - 100
+                                        - 300
                   AND cur.begin_date <= dn.reservation_date
                   AND cur.base_curr_code = (SELECT r.currency_code
                                             FROM resort r
@@ -121,7 +122,7 @@ SELECT rn.resort
                                           FROM businessdate
                                           WHERE state = 'OPEN' AND resort = rn.resort)
                                         )
-                                - 100
+                                - 300
           AND cur.begin_date <= dn.reservation_date
           AND cur.base_curr_code = (SELECT r.currency_code
                                     FROM resort r
