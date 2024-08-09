@@ -110,7 +110,7 @@ SELECT rn.resort
                                             FROM resort r
                                             WHERE r.resort = rn.resort)
                   AND cur.currency_code = dn.currency_code
-                  AND cur.exchange_rate_type IN ('ROOM', 'POSTEX1'))
+                  AND cur.exchange_rate_type IN ('POST', 'CURR'))
        END
            exchange_rate
      , (SELECT MIN ( cur.exchange_rate) KEEP (DENSE_RANK FIRST ORDER BY cur.begin_date DESC, NVL (cur.exchange_rate, 0) DESC)
@@ -128,7 +128,7 @@ SELECT rn.resort
                                     FROM resort r
                                     WHERE r.resort = rn.resort)
           AND cur.currency_code = 'EUR'
-          AND cur.exchange_rate_type IN ('ROOM', 'POSTEX1'))
+          AND cur.exchange_rate_type IN ('POST', 'CURR'))
            eur_exchange_rate
      , CASE
            WHEN dn.reservation_date < (SELECT business_date
