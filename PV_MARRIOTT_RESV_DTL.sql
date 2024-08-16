@@ -89,6 +89,7 @@ SELECT rn.resort
      --
      -- -------------------------------------------------------------------------- --
      , dn.currency_code
+     , dn.share_amount
      , CASE
            WHEN dn.currency_code = (SELECT r.currency_code
                                     FROM resort r
